@@ -1,0 +1,29 @@
+{
+    "app": {},
+    "mongoDB": {
+        "path": "mongodb://localhost/settingGuidelines"
+    },
+    "deputy":{
+        "authToken": "adf25d0a04b2017cabb30a55e721cae2",
+        "roster":{
+            "path": "https://kitchenmagic.na.deputy.com/api/v1/resource/Roster/",
+            "query":{
+                "search":
+                {
+                    "StartDate": { 
+                        "field": "Date", 
+                        "data": "2017-02-15",
+                        "type": "ge"
+                    },
+                    "EndDate": { 
+                        "field": "Date", 
+                        "data": "2017-02-16", "type": "le"
+                    }
+                },
+                "max": 10,
+                "group": ["Employee"]
+            }
+        },
+        "employees": {}
+    }
+}
