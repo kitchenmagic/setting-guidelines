@@ -12,16 +12,15 @@
                 {
                     "StartDate": { 
                         "field": "Date", 
-                        "data": "2017-02-15",
+                        "data": "2018-06-20",
                         "type": "ge"
                     },
                     "EndDate": { 
                         "field": "Date", 
-                        "data": "2017-02-16", "type": "le"
+                        "data": "2018-06-24", 
+                        "type": "le"
                     }
-                },
-                "max": 10,
-                "group": ["Employee"]
+                }
             }
         },
         "employees": {}

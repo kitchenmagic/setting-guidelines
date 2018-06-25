@@ -1,90 +1,74 @@
 const axios = require('axios');
 const config = require('config');
-const mongoose = require('mongoose');
 const shifts = require('../components/shifts/shifts');
-const Shift = shifts.Shift;
-
-mongoose.connect(config.get('mongoDB.path'));
-
-
-function parseRegionNumber(regionName){
-    if(regionName.search(/Region/i) >= 0) {
-        return parseInt(regionName.substr(-(regionName.length - 6)).trim());
-    }
-    return null;
-}
-
-
-function createShiftsFromRosterData(rosterData){
-    "use strict";
-
-    const newShifts = [];
-
-    for( let key in rosterData){
-
-        let currShift = rosterData[key];
-
-        const newShift = new Shift({
-            deputyRosterId: currShift.Id,
-            startDateTime: currShift.StartTimeLocalized,
-            endDateTime: currShift.EndTimeLocalized,
-            regionName: currShift._DPMetaData.OperationalUnitInfo.OperationalUnitName,
-            regionNumber: parseRegionNumber(currShift._DPMetaData.OperationalUnitInfo.OperationalUnitName),
-            employeeId: currShift._DPMetaData.OperationalUnitInfo.Id
-        });
-
-        newShifts.push(newShift);
-    }
-
-    return newShifts;
-    
-}
+const Shift = shifts.Model;
 
 
 
-//Fetches roster data ("shifts") from deputy returns a promise
+//Fetches roster data ("shifts") from deputy and returns a promise
 async function getRosterData(query){
     "use strict";
-
-    const postOptions = 
-    {
-        method:'POST',
-        url: config.get('deputy.roster.path') + 'QUERY',
-        json: true,
-        headers:
-        {
-            'cache-control': 'no-cache',
-            'content-type': 'application/json',
-            authorization: "OAuth " + config.get('deputy.authToken')
-        },
-        data: query || config.get('deputy.roster.query')
-    };
-
+    
     try{
+        const postOptions = {
+            method:'POST',
+            url: config.get('deputy.roster.path') + 'QUERY',
+            json: true,
+            headers: {
+                'cache-control': 'no-cache',
+                'content-type': 'application/json',
+                authorization: "OAuth " + config.get('deputy.authToken')
+            },
+            data: query || config.get('deputy.roster.query')
+        };
 
-        const response = await axios(postOptions); 
-        return response.data;
+        let allRosterData =[], response;
+        const maxRecords = postOptions.data.max = 500;
+        postOptions.data.start = 0;
+
+        do{
+            //Send the api call
+            response = await axios(postOptions);
+
+            //Add the returned roster documents to the allRosterData array
+            allRosterData = allRosterData.concat(response.data);
+            
+            //Update the starting position of the query
+            postOptions.data.start += maxRecords; 
+        }
+        //Get more records if the previous fetch hit the max number documents. Eg. the query limit  
+        while( response.data.length === maxRecords );  
+        
+        console.log('All roster data size: ', allRosterData.length);
+        return allRosterData;
 
     } catch(err) {
-
         throw new Error(err);
-
     }
 
-
-
 }
 
 
+//Gets shifts roster data (shifts) from Deputy and syncs it with Setting Guidelines Shifts
+async function syncShiftsWithDeputyRoster(){
 
-async function syncWithDeputy(){
+    try{
+        const rosterData = await getRosterData();
+        const shiftsArray = shifts.parseDeputyRoster(rosterData);
 
-    const rosterData = await getRosterData();
-    const shiftsArray = createShiftsFromRosterData(rosterData);
-    shifts.insertShifts(shiftsArray, function(error, docs){
-        console.log(docs);
-    });
+        // shifts.insert(shiftsArray, function(error, docs){
+        //     if(error){
+        //             throw new Error(error.message);
+        //         }
+        //     console.log(shiftsArray.length + " new shifts created.");
+        // });
+        console.log('Newly upserted document ',shifts.upsertByDeputyRosterId(shiftsArray[0]));
+
+    } catch(error) {
+        throw new Error(error.message);
+    }
 
 }
 
-syncWithDeputy();
+syncShiftsWithDeputyRoster();
+

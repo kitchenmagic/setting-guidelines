@@ -35,7 +35,8 @@ require('./syncDB/syncDeputyRoster');
         3) Get appointment data 
 
 
-    1) Get Sales Capacity
+    1) Get Shifts
+        Push shifts 
 
     2) Get Booked Appointments
     3) Compute Appointment Availability
