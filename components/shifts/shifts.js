@@ -47,34 +47,33 @@ function insertMany(shiftsArray, callback){
 }
 
 
-async function update(id){}
+// async function update(id){}
 
 function upsertByDeputyRosterId(shifts){
 
-    let query = {};
-    const options = { upsert: true, new:true, overwrite:true };
-
     if(Array.isArray(shifts)){
-        const updatedShifts = [];
-        shifts.forEach(shift => {
-            query = { deputyRosterId: shift.deputyRosterId };
-            console.log('Shift ', shift);
-            Model.findOneAndUpdate(query, shift, options, (error, doc)=>{
-                if(error){
-                    throw new Error(error.message)
-                }
-                console.log('New Doc:',doc);
-                updatedShifts.push(doc);
+        return shifts.map(shift => { return upsertShift(shift); });
+    }     
+
+    return upsertShift(shifts);
+
+    function upsertShift(shift){
+        try{
+            let query = {'deputyRosterId': shift.deputyRosterId};
+            const options = { upsert: true, new:true }; //, overwrite:true
+            let upsertData = shift.toObject();
+            delete upsertData._id;
+
+            return Model.findOneAndUpdate( query, {$set: upsertData } , options, (err,doc)=>{
+                if(err)
+                    throw new Error(err.message);
+                return doc;
             });
-        });
-        return updatedShifts;
-    } else {
-        query = { deputyRosterId: shifts.deputyRosterId };
 
-        console.log('Shift to be updated', shifts);
-        return Model.findOneAndUpdate( query, {$set:shifts} , options );
-    } 
-
+        }catch(err){
+            throw new Error(err.message);
+        }
+    }
 
 }
 
@@ -109,13 +108,13 @@ function parseDeputyRoster(rosterData){
     }
 
     function rosterDocToShift(rosterDoc){
-        return {
+        return new Model({
             deputyRosterId: rosterDoc.Id,
             startDateTime: rosterDoc.StartTimeLocalized,
             endDateTime: rosterDoc.EndTimeLocalized,
             regionName: rosterDoc._DPMetaData.OperationalUnitInfo.OperationalUnitName,
             employeeId: rosterDoc._DPMetaData.OperationalUnitInfo.Id
-        };
+        });
     }
 
 }
@@ -127,7 +126,7 @@ module.exports = {
     Model,
     insert,
     insertMany,
-    update,
+    // update,
     remove,
     upsertByDeputyRosterId,
     parseDeputyRoster

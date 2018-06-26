@@ -56,13 +56,7 @@ async function syncShiftsWithDeputyRoster(){
         const rosterData = await getRosterData();
         const shiftsArray = shifts.parseDeputyRoster(rosterData);
 
-        // shifts.insert(shiftsArray, function(error, docs){
-        //     if(error){
-        //             throw new Error(error.message);
-        //         }
-        //     console.log(shiftsArray.length + " new shifts created.");
-        // });
-        console.log('Newly upserted document ',shifts.upsertByDeputyRosterId(shiftsArray[0]));
+        shifts.upsertByDeputyRosterId(shiftsArray);
 
     } catch(error) {
         throw new Error(error.message);
