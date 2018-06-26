@@ -1,5 +1,56 @@
 {
-    "app": {},
+    "appointment": {
+        "slots": [
+            {
+                "id":1,
+                "start":{
+                    "hour": 10,
+                    "minute": 0
+                },
+                "end": {
+                    "hour":12,
+                    "minute": 0
+                },
+                "dayOfWeek": [1,2,3,4,5]
+            },
+            {
+                "id":2,
+                "start":{
+                    "hour": 13,
+                    "minute": 0
+                },
+                "end": {
+                    "hour":15,
+                    "minute": 0
+                },
+                "dayOfWeek": [1,2,3,4,5]
+            },
+            {
+                "id":3,
+                "start":{
+                    "hour": 19,
+                    "minute": 0
+                },
+                "end": {
+                    "hour":21,
+                    "minute": 0
+                },
+                "dayOfWeek": [1,2,3,4,5]
+            },
+            {
+                "id":4,
+                "start":{
+                    "hour": 19,
+                    "minute": 0
+                },
+                "end": {
+                    "hour":21,
+                    "minute": 0
+                },
+                "dayOfWeek": [0,6]
+            }
+        ]
+    },
     "mongoDB": {
         "path": "mongodb://localhost/settingGuidelines"
     },

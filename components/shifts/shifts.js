@@ -1,5 +1,6 @@
 const config = require('config');
 const mongoose = require('mongoose');
+const moment = require('moment');
 // const log = require('debug')('log');
 
 mongoose.connect(config.get('mongoDB.path'))
@@ -19,7 +20,8 @@ const shiftSchema = new mongoose.Schema({
     endDateTime: Date,
     regionName: String,
     regionNumber: Number,
-    employeeId: Number
+    employeeId: Number,
+    appointmentSlotId: Number
 });
 
 //Set regionNumber
@@ -28,9 +30,8 @@ shiftSchema.pre('save', function(next){
     next();
 })
 
+//Create the shift model
 const Model = mongoose.model('Shift', shiftSchema);
-
-
 
 
 
@@ -51,18 +52,17 @@ function insertMany(shiftsArray, callback){
 
 function upsertByDeputyRosterId(shifts){
 
-    if(Array.isArray(shifts)){
-        return shifts.map(shift => { return upsertShift(shift); });
-    }     
+    if(Array.isArray(shifts))
+        return shifts.map(shift => upsertShift(shift) );
 
     return upsertShift(shifts);
 
     function upsertShift(shift){
         try{
-            let query = {'deputyRosterId': shift.deputyRosterId};
+            let query = { 'deputyRosterId': shift.deputyRosterId };
             const options = { upsert: true, new:true }; //, overwrite:true
             let upsertData = shift.toObject();
-            delete upsertData._id;
+            delete upsertData._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
 
             return Model.findOneAndUpdate( query, {$set: upsertData } , options, (err,doc)=>{
                 if(err)
@@ -82,30 +82,30 @@ async function remove(id){
 }
 
 
-function get(){} 
-
 
 
 
 
 //Utilities
+
+//Gets the region number from a string
 function parseRegionNumber(regionName){
-    if(regionName.search(/Region/i) >= 0) {
+
+    if(regionName.search(/Region/i) >= 0)
         return parseInt(regionName.substr(-(regionName.length - 6)).trim());
-    }
+
     return null;
 }
 
+
+//Creates a Shift object from a Deputy Roster Document
 function parseDeputyRoster(rosterData){
     "use strict";
 
-    if(Array.isArray(rosterData)){
-        return rosterData.map( rosterDoc => {
-            return rosterDocToShift(rosterDoc);
-        });
-    }else{
-        return rosterDocToShift(rosterData);
-    }
+    if(Array.isArray(rosterData))
+        return rosterData.map( rosterDoc => rosterDocToShift(rosterDoc) );
+
+    return rosterDocToShift(rosterData);
 
     function rosterDocToShift(rosterDoc){
         return new Model({
@@ -113,13 +113,36 @@ function parseDeputyRoster(rosterData){
             startDateTime: rosterDoc.StartTimeLocalized,
             endDateTime: rosterDoc.EndTimeLocalized,
             regionName: rosterDoc._DPMetaData.OperationalUnitInfo.OperationalUnitName,
-            employeeId: rosterDoc._DPMetaData.OperationalUnitInfo.Id
+            employeeId: rosterDoc._DPMetaData.OperationalUnitInfo.Id,
+            regionNumber: parseRegionNumber(rosterDoc._DPMetaData.OperationalUnitInfo.OperationalUnitName),
+            appointmentSlotId: computeAppointmentSlotId(rosterDoc.StartTimeLocalized, rosterDoc.EndTimeLocalized)
         });
     }
 
 }
 
 
+//Determine which time slot a shift falls into
+function computeAppointmentSlotId(startDateTime, endDateTime){
+    let timeSlots = Object.assign(config.get('appointment.slots'));
+    const date = moment(startDateTime);
+    const start = moment.parseZone(startDateTime);
+    const end = moment.parseZone(endDateTime).isValid();
+
+    
+    const startDOW = start.day();
+
+    //Get the time slots that apply to the day of week
+    timeSlots = timeSlots.filter( slot => slot.dayOfWeek.indexOf(startDOW) > -1 );
+
+    //Determine how much overlap there is between the the start and end time and the slot
+    const timeSlot = timeSlots.map( slot => {
+        const overlap = slot;
+    });
+    
+    console.log(date.day(),timeSlots.length);
+    return 1;
+}
 
 
 module.exports = {
@@ -130,7 +153,7 @@ module.exports = {
     remove,
     upsertByDeputyRosterId,
     parseDeputyRoster
-}
+};
 
 //
 
