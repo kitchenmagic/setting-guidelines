@@ -16,12 +16,12 @@ db.on('error', console.error.bind(console, 'connection error:'));
 
 const shiftSchema = new mongoose.Schema({
     deputyRosterId: String,
-    startDateTime: Date,
-    endDateTime: Date,
+    start: Date,
+    end: Date,
     regionName: String,
     regionNumber: Number,
     employeeId: Number,
-    appointmentSlotId: Number
+    appointmentSlotId: [Number]
 });
 
 //Set regionNumber
@@ -77,12 +77,9 @@ function upsertByDeputyRosterId(shifts){
 
 }
 
-async function remove(id){
-    const result = await Model.deleteOne({_id:id});
+function remove(id){
+    // const result = await Model.deleteOne({_id:id});
 }
-
-
-
 
 
 
@@ -125,23 +122,38 @@ function parseDeputyRoster(rosterData){
 //Determine which time slot a shift falls into
 function computeAppointmentSlotId(startDateTime, endDateTime){
     let timeSlots = Object.assign(config.get('appointment.slots'));
-    const date = moment(startDateTime);
-    const start = moment.parseZone(startDateTime);
-    const end = moment.parseZone(endDateTime).isValid();
-
-    
-    const startDOW = start.day();
+    const start = moment(startDateTime);
+    const end = moment(endDateTime);
+    const dow = start.day();
 
     //Get the time slots that apply to the day of week
-    timeSlots = timeSlots.filter( slot => slot.dayOfWeek.indexOf(startDOW) > -1 );
+    timeSlots = timeSlots.filter( slot => slot.dayOfWeek.indexOf(dow) > -1 );
 
-    //Determine how much overlap there is between the the start and end time and the slot
-    const timeSlot = timeSlots.map( slot => {
-        const overlap = slot;
-    });
+    timeSlots.forEach( slot => {
+        const slotStart = moment({
+            year: start.year(), 
+            month: start.month(), 
+            date: start.date(), 
+            hour:slot.start.hour, 
+            minute: slot.start.minute
+        });
+
+        const slotEnd = moment({
+            year: end.year(), 
+            month: end.month(), 
+            date: end.date(), 
+            hour: slot.end.hour, 
+            minute: slot.end.minute
+        });
+
+        //check if there is any overlap
+        //Is the shift start between the slot start and end
+        const startTimesDiff = start.diff(slotStart);
+        console.log( start, ' and ', slotStart, ' are ', (startTimesDiff/60000), ' apart.');
+    })
     
-    console.log(date.day(),timeSlots.length);
-    return 1;
+    // console.log(date.day(),timeSlots.length);
+    return [1];
 }
 
 
@@ -149,18 +161,11 @@ module.exports = {
     Model,
     insert,
     insertMany,
-    // update,
     remove,
     upsertByDeputyRosterId,
     parseDeputyRoster
 };
 
-//
-
-//Get Shifts
-//Insert shifts
-//Update shifts
-//Delete Shifts
 
 
 

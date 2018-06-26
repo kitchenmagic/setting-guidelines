@@ -1,7 +1,7 @@
 const axios = require('axios');
 const config = require('config');
 const shifts = require('../components/shifts/shifts');
-const Shift = shifts.Model;
+
 
 
 
@@ -56,7 +56,7 @@ async function syncShiftsWithDeputyRoster(){
         const rosterData = await getRosterData();
         const shiftsArray = shifts.parseDeputyRoster(rosterData);
 
-        shifts.upsertByDeputyRosterId(shiftsArray);
+        // shifts.upsertByDeputyRosterId(shiftsArray);
 
     } catch(error) {
         throw new Error(error.message);

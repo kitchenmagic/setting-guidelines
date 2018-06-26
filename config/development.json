@@ -1,5 +1,8 @@
 {
     "appointment": {
+        "slotConfig":{
+            "minimumOverlapPerc": 75
+        },
         "slots": [
             {
                 "id":1,
