@@ -36,9 +36,18 @@ const Model = mongoose.model('Shift', shiftSchema);
 
 
 
-//CRUD FUNCTIONS
-function insert(shift, callback){
-    return Model.create(shift, callback);
+//Creates a shift
+async function createShift(deputyRosterId, start, end, regionName, regionNumber, employeeId, appointmentSlotId){
+    const shift = new Shift({
+        deputyRosterId,
+        start,
+        end,
+        regionName,
+        regionNumber,
+        employeeId,
+        appointmentSlotId
+    })
+    return await shift.save();
 }
 
 //Inserts many documents (shifts) into the database in one call.
@@ -156,10 +165,10 @@ function computeAppointmentSlotId(startDateTime, endDateTime){
     return [1];
 }
 
-
+g 
 module.exports = {
     Model,
-    insert,
+    createShift,
     insertMany,
     remove,
     upsertByDeputyRosterId,
