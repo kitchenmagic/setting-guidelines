@@ -3,14 +3,14 @@ const mongoose = require('mongoose');
 const moment = require('moment');
 const slots = config.get('appointment.slots');
 const utilities = require('../utilities.js') 
-const apptDuration = config.get('appointment.duration')
-
-// const log = require('debug')('log');
+const apptDuration = config.get('appointment.duration');
+const debug = require('debug')('shifts');
 
 mongoose.connect(config.get('mongoDB.path'))
-    .then(()=>{console.log('Connected to MongoDB...');})
-    .catch((err)=>{console.log(err);});
-mongoose.set('debug',true);
+    .then(()=>{debug('Connected to MongoDB...');})
+    .catch((err)=>{debug(err);});
+
+    // mongoose.set('debug',true);
 
 //Get reference to database 
 const db = mongoose.connection;
@@ -28,21 +28,30 @@ const shiftSchema = new mongoose.Schema({
     appointmentSlotId: [Number]
 });
 
-//Set regionNumber
-shiftSchema.pre('findOneAndUpdate', function(next){
 
-    if(this.regionName)
-        this.regionNumber = parseRegionNumber(this.regionName);
+shiftSchema.on('init', function(){
+    debug('Schema Init');
     
-    this.duration = duration( this.start, this.end ).asMinutes(),
-    getSlotCoverage(this.toObject(), slots); 
-
-    console.log('Pre Update');
-    next();
+    // if(this.regionName)
+    //     this.regionNumber = utilities.parseRegionNumber(this.regionName);
+    
+    // addSlotsToShifts(this, slots);
 })
 
 //Create the shift model
 const Model = mongoose.model('Shift', shiftSchema);
+
+
+
+//Set regionNumber
+shiftSchema.pre('findOneAndUpdate', function(next){
+    debug('Pre Update');
+    // this.duration = duration( this.start, this.end ).asMinutes(),
+    debug(this);
+    next();
+})
+
+
 
 
 
@@ -99,91 +108,25 @@ function upsertByDeputyRosterId(shifts){
 
 }
 
+
+
 function remove(id){
     // const result = await Model.deleteOne({_id:id});
 }
 
-//Utilities
-
-//Gets the region number from a string
-function parseRegionNumber(regionName){
-
-    if(regionName.search(/Region/i) >= 0)
-        return parseInt(regionName.substr(-(regionName.length - 6)).trim());
-
-    return null;
-}
 
 
-//Creates a Shift object from a Deputy Roster Document
-function parseShiftsFromDeputyRoster(rosterData){
-    "use strict";
-
-    if(Array.isArray(rosterData))
-        return rosterData.map( rosterDoc => rosterDocToShift(rosterDoc) );
-
-    return rosterDocToShift(rosterData);
-
-    function rosterDocToShift(rosterDoc){
-
-        return new Model({
-            deputyRosterId: rosterDoc.Id,
-            start: moment(rosterDoc.StartTimeLocalized),
-            end: moment(rosterDoc.EndTimeLocalized),
-            regionName: rosterDoc._DPMetaData.OperationalUnitInfo.OperationalUnitName,
-            employeeId: rosterDoc._DPMetaData.OperationalUnitInfo.Id,
-        });
-    }
-
-}
 
 
-//Determine which time slot a shift falls into
-function computeAppointmentSlotId(startDateTime, endDateTime){
-    let timeSlots = Object.assign(config.get('appointment.slots'));
-    const start = moment(startDateTime);
-    const end = moment(endDateTime);
-    const dow = start.day();
-
-    //Get the time slots that apply to the day of week
-    timeSlots = timeSlots.filter( slot => slot.dayOfWeek.indexOf(dow) > -1 );
-
-    timeSlots.forEach( slot => {
-
-        const slotStart = moment({
-            year: start.year(), 
-            month: start.month(), 
-            date: start.date(), 
-            hour:slot.start.hour, 
-            minute: slot.start.minute
-        });
-
-        const slotEnd = moment({
-            year: end.year(), 
-            month: end.month(), 
-            date: end.date(), 
-            hour: slot.end.hour, 
-            minute: slot.end.minute
-        });
-
-        //check if there is any overlap
-        //Is the shift start between the slot start and end
-        const startTimesDiff = start.diff(slotStart);
-        console.log( start, ' and ', slotStart, ' are ', (startTimesDiff/60000), ' apart.');
-    })
-    
-    // console.log(date.day(),timeSlots.length);
-    return [1];
-}
 
 
 
 //Returns shift with slot appended 
 function addSlotsToShifts(shift, slots){
     const shiftStart = moment(shift.start);
-    const shiftEnd = moment(shit.end);
+    const shiftEnd = moment(shift.end);
 
-    const dayOfWeek = start.day();
+    const dayOfWeek = shiftStart.day();
     
     //Filters out any slots that don't apply to day of week
     slots = slots
@@ -193,12 +136,12 @@ function addSlotsToShifts(shift, slots){
         const slotStart = moment( shiftStart.date() ).add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
         const slotEnd = moment( shiftEnd.date() ).add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
         const overlap = utilities.getRangeOverlap(shiftStart,shiftEnd,slotStart,slotEnd);
-        console.log('Overlap: ', overlap);
+        debug('Overlap: ', overlap);
 
         return overlap > 0;
     })
 
-    console.log('Slots ', slots)
+    debug('Slots ', slots)
 
 }
 
@@ -208,8 +151,7 @@ module.exports = {
     createShift,
     insertMany,
     remove,
-    upsertByDeputyRosterId,
-    parseShiftsFromDeputyRoster
+    upsertByDeputyRosterId
 };
 
 

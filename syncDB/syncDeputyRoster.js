@@ -1,6 +1,9 @@
 const axios = require('axios');
 const config = require('config');
 const shifts = require('../components/shifts/shifts');
+const debug = require('debug')('sync');
+const utilities = require('../components/utilities.js');
+
 
 //Fetches roster data ("shifts") from deputy and returns a promise
 async function getRosterData(query){
@@ -19,7 +22,7 @@ async function getRosterData(query){
             data: query || config.get('deputy.roster.query')
         };
 
-        let allRosterData =[], response;
+        let allRosterData = [], response;
         const maxRecords = postOptions.data.max = 500;
         postOptions.data.start = 0;
 
@@ -36,7 +39,7 @@ async function getRosterData(query){
         //Get more records if the previous fetch hit the max number documents. Eg. the query limit  
         while( response.data.length === maxRecords );  
         
-        config('All roster data size: ', allRosterData.length);
+        debug('All roster data size: ', allRosterData.length);
         return allRosterData;
 
     } catch(err) {
@@ -51,9 +54,9 @@ async function syncShiftsWithDeputyRoster(){
 
     try{
         const rosterData = await getRosterData();
-        const shiftsArray = shifts.parseShiftsFromDeputyRoster(rosterData);
+        const shiftsArray = utilities.parseShiftsFromDeputyRoster(rosterData);
 
-        // console.log(shiftsArray);
+        // debug(shiftsArray);
         shifts.upsertByDeputyRosterId(shiftsArray);
 
     } catch(error) {
