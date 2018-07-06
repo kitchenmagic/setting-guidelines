@@ -19,54 +19,108 @@ db.on('error', console.error.bind(console, 'connection error:'));
 
 const shiftSchema = new mongoose.Schema({
     deputyRosterId: String,
-    start: Object, //Moment
-    end: Object, //Moment
-    duration: Object,//Moment duration
+    start: {
+        type: Date,
+        required: true
+    }, 
+    end: {
+        type: Date,
+        required: true
+    }, 
+    duration: Object,
     regionName: String,
     regionNumber: Number,
     employeeId: Number,
-    appointmentSlotId: [Number]
+    appointmentSlots: [ Object ]
 });
 
 
-shiftSchema.on('init', function(){
-    debug('Schema Init');
+// shiftSchema.on('init', function(){
+    // debug('Schema Init');
     
     // if(this.regionName)
     //     this.regionNumber = utilities.parseRegionNumber(this.regionName);
-    
     // addSlotsToShifts(this, slots);
-})
+// })
 
 //Create the shift model
 const Model = mongoose.model('Shift', shiftSchema);
 
-
-
-//Set regionNumber
-shiftSchema.pre('findOneAndUpdate', function(next){
-    debug('Pre Update');
-    // this.duration = duration( this.start, this.end ).asMinutes(),
-    debug(this);
-    next();
+shiftSchema.pre('update', (doc)=>{
+    debug('validate');
+    doc();
 })
 
-
-
+//Set regionNumber
+// shiftSchema.pre('findOneAndUpdate', function(next){
+//     debug('Pre Update');
+//     this.duration = duration( this.start, this.end ).asMinutes(),
+//     debug(this);
+//     next();
+// })
 
 
 
 //Creates a shift
-async function createShift(start, end, regionName, regionNumber, employeeId, appointmentSlotId){
+async function createShift(start, end, regionName, regionNumber, employeeId){
+
     const shift = new Shift({
         start,
         end,
         regionName,
         regionNumber,
-        employeeId,
-        appointmentSlotId
-    })
+        employeeId
+    });
+
+    //Add shifts to slot
+    shift.appointmentSlots = getRelevantSlots(shift.start, shift.end);
+
     return await shift.save();
+}
+
+
+
+//Takes single shift or array of shifts
+function upsert(query, documents, options){
+
+    options = options || { upsert:true, runValidators:true, new: true }
+
+    if(Array.isArray(documents)){
+
+        return documents.map( document => update( query, document, options ) )
+    }
+
+    return update( query, documents, options );
+}
+
+
+
+
+function update(query, document, options, callback){
+
+    options = options || {};
+
+    try {
+
+        if( document.constructor.name === 'model' ){
+            document = document.toObject();
+            delete document._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
+        }
+        
+        if(!options.overwrite)
+            document = { $set: document }
+
+        if(callback){
+            return Model.update(query, document, options, callback);
+        }
+        
+        return Model.update(query, document, options);
+
+    } catch(err) {
+
+        throw new Error( err.message );
+
+    }
 }
 
 //Inserts many documents (shifts) into the database in one call.
@@ -74,40 +128,6 @@ async function createShift(start, end, regionName, regionNumber, employeeId, app
 function insertMany(shiftsArray, callback){
     return Model.insertMany(shiftsArray, callback );
 }
-
-
-// Updates a shift based on it's deputy 
-function upsertByDeputyRosterId(shifts){
-
-    if(Array.isArray(shifts))
-        return shifts.map(shift => upsertShift(shift) );
-
-    return upsertShift(shifts);
-
-    function upsertShift(shift){
-
-        if(!shift.deputyRosterId)
-            return;
-
-        try{
-            let upsertData = shift.toObject();
-            delete upsertData._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
-            
-            let query = { 'deputyRosterId': shift.deputyRosterId };
-            const options = { upsert: true, new:true }; //, overwrite:true
-            return Model.findOneAndUpdate( query, {$set: upsertData, runValidators:true } , options, (err,doc)=>{
-                if(err)
-                    throw new Error(err.message);
-                return doc;
-            });
-
-        }catch(err){
-            throw new Error(err.message);
-        }
-    }
-
-}
-
 
 
 function remove(id){
@@ -118,31 +138,29 @@ function remove(id){
 
 
 
-
-
-
 //Returns shift with slot appended 
-function addSlotsToShifts(shift, slots){
-    const shiftStart = moment(shift.start);
-    const shiftEnd = moment(shift.end);
+function getRelevantSlots(start, end){
 
-    const dayOfWeek = shiftStart.day();
+    const inputStart = moment(start);
+    const inputEnd = moment(end);
     
     //Filters out any slots that don't apply to day of week
-    slots = slots
-        .filter( slot => slot.dayOfWeek.indexOf(dayOfWeek) > -1 )
+    const relevantSlots = slots.filter( slot => slot.dayOfWeek.indexOf( inputStart.day() ) > -1 ) //Filters out slots that don't apply to start day of week
         .filter( (slot)=>{
 
-        const slotStart = moment( shiftStart.date() ).add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
-        const slotEnd = moment( shiftEnd.date() ).add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
-        const overlap = utilities.getRangeOverlap(shiftStart,shiftEnd,slotStart,slotEnd);
-        debug('Overlap: ', overlap);
+            const slotStart = moment( inputStart.date() ).add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
+            const slotEnd = moment( inputEnd.date() ).add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
 
-        return overlap > 0;
-    })
+            const overlap = utilities.getRangeOverlap(inputStart,inputEnd,slotStart,slotEnd);
 
-    debug('Slots ', slots)
+            debug('Overlap: ', overlap);
 
+            return overlap > 0;
+        })
+
+    debug('Relevant Slots', relevantSlots);
+
+    return relevantSlots
 }
 
 
@@ -150,8 +168,9 @@ module.exports = {
     Model,
     createShift,
     insertMany,
-    remove,
-    upsertByDeputyRosterId
+    upsert,
+    update,
+    remove
 };
 
 
