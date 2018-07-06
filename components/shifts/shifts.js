@@ -61,6 +61,7 @@ shiftSchema.pre('update', (doc)=>{
 
 
 //Creates a shift
+
 async function createShift(start, end, regionName, regionNumber, employeeId){
 
     const shift = new Shift({
