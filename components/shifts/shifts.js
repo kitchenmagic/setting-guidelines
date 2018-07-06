@@ -34,6 +34,13 @@ const shiftSchema = new mongoose.Schema({
     appointmentSlots: [ Object ]
 });
 
+//Create the shift model
+const Model = mongoose.model('Shift', shiftSchema);
+
+shiftSchema.pre('update', (doc)=>{
+    debug('validate');
+    doc();
+})
 
 // shiftSchema.on('init', function(){
     // debug('Schema Init');
@@ -42,14 +49,6 @@ const shiftSchema = new mongoose.Schema({
     //     this.regionNumber = utilities.parseRegionNumber(this.regionName);
     // addSlotsToShifts(this, slots);
 // })
-
-//Create the shift model
-const Model = mongoose.model('Shift', shiftSchema);
-
-shiftSchema.pre('update', (doc)=>{
-    debug('validate');
-    doc();
-})
 
 //Set regionNumber
 // shiftSchema.pre('findOneAndUpdate', function(next){
@@ -136,13 +135,11 @@ function remove(id){
 
 
 
+//returns array of slots which apply to given dateTime range
+function getRelevantSlots(startDateTime, endDateTime){
 
-
-//Returns shift with slot appended 
-function getRelevantSlots(start, end){
-
-    const inputStart = moment(start);
-    const inputEnd = moment(end);
+    const inputStart = moment(startDateTime);
+    const inputEnd = moment(endDateTime);
     
     //Filters out any slots that don't apply to day of week
     const relevantSlots = slots.filter( slot => slot.dayOfWeek.indexOf( inputStart.day() ) > -1 ) //Filters out slots that don't apply to start day of week
