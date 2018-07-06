@@ -1,10 +1,12 @@
 const config = require('config');
 const mongoose = require('mongoose');
 const moment = require('moment');
-const slots = config.get('appointment.slots');
 const utilities = require('../utilities.js') 
-const apptDuration = config.get('appointment.duration');
 const debug = require('debug')('shifts');
+
+//Config
+const slots = config.get('appointment.slots');
+const apptDuration = config.get('appointment.duration');
 
 mongoose.connect(config.get('mongoDB.path'))
     .then(()=>{debug('Connected to MongoDB...');})
