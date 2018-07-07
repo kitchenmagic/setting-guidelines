@@ -29,7 +29,7 @@ const shiftSchema = new mongoose.Schema({
         type: Date,
         required: true
     }, 
-    duration: Object,
+    duration: Number,
     regionName: String,
     regionNumber: Number,
     employeeId: Number,
@@ -37,33 +37,11 @@ const shiftSchema = new mongoose.Schema({
 });
 
 //Create the shift model
-const Model = mongoose.model('Shift', shiftSchema);
-
-shiftSchema.pre('update', (doc)=>{
-    debug('validate');
-    doc();
-})
-
-// shiftSchema.on('init', function(){
-    // debug('Schema Init');
-    
-    // if(this.regionName)
-    //     this.regionNumber = utilities.parseRegionNumber(this.regionName);
-    // addSlotsToShifts(this, slots);
-// })
-
-//Set regionNumber
-// shiftSchema.pre('findOneAndUpdate', function(next){
-//     debug('Pre Update');
-//     this.duration = duration( this.start, this.end ).asMinutes(),
-//     debug(this);
-//     next();
-// })
+const Shift = mongoose.model('Shift', shiftSchema);
 
 
 
 //Creates a shift
-
 async function createShift(start, end, regionName, regionNumber, employeeId){
 
     const shift = new Shift({
@@ -94,9 +72,7 @@ function upsert(query, documents, options){
 
 }
 
-
-
-
+// Updates shifts in database
 function update(query, document, options, callback){
 
     options = options || {new:true, runValidators:true, upsert:false };
@@ -107,18 +83,13 @@ function update(query, document, options, callback){
             document = document.toObject();
             delete document._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
         }
+
+        document.appointmentSlots = getRelevantSlots(document.start, document.end);
         
-        // if(!options.overwrite)
-        //     document = { $set: document }
+        if(!options.overwrite)
+             document = { $set: document }
 
-        debug('Update: ', document);
-
-        let result = Model.findOneAndUpdate(query, document, options, function(err, res){
-            debug('Error: ',err, 'Result',res);
-        });
-
-        return result;
-
+        return Shift.findOneAndUpdate(query, document, options, callback);
 
     } catch(err) {
 
@@ -132,7 +103,7 @@ function update(query, document, options, callback){
 //Inserts many documents (shifts) into the database in one call.
 //Atomic function
 function insertMany(shiftsArray, callback){
-    return Model.insertMany(shiftsArray, callback );
+    return Shift.insertMany(shiftsArray, callback );
 }
 
 
@@ -142,34 +113,46 @@ function remove(id){
 
 
 
-//returns array of slots which apply to given dateTime range
+//returns array of slots which overlap the given startDateTime and endDateTime
 function getRelevantSlots(startDateTime, endDateTime){
 
-    const inputStart = moment(startDateTime);
-    const inputEnd = moment(endDateTime);
-    
-    //Filters out any slots that don't apply to day of week
-    const relevantSlots = slots.filter( slot => slot.dayOfWeek.indexOf( inputStart.day() ) > -1 ) //Filters out slots that don't apply to start day of week
-        .filter( (slot)=>{
+    // Convert parameters to moments
+    startDateTime = moment(startDateTime);
+    endDateTime = moment(endDateTime);
 
-            const slotStart = moment( inputStart.date() ).add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
-            const slotEnd = moment( inputEnd.date() ).add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
+    // Check if parameters are valid moment objects 
+    if(!(startDateTime.isValid() & endDateTime.isValid() ) )
+        return 
 
-            const overlap = utilities.getRangeOverlap(inputStart,inputEnd,slotStart,slotEnd);
+    const relevantSlots = slots
+        
+        // Filters out slots that don't apply to start day of week 
+        .filter( (slot) => slot.dayOfWeek.indexOf( startDateTime.day() ) > -1 ) 
 
-            debug('Overlap: ', overlap);
+        // Fitler out slots where the shift doesn't meet the minumum overlap requirements
+        .filter( (slot) => {
 
-            return overlap > 0;
+            // Slots have no context, they only apply to days of the week and times
+            // Use the date of the input for the date of the slot
+            const slotStart = startDateTime.startOf('day').add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
+            const slotEnd = endDateTime.startOf('day').add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
+
+            // Convert overlap from milliseconds to minutes 
+            const minutesOverlap = utilities.getRangeOverlap(startDateTime, endDateTime, slotStart, slotEnd) / 60000; 
+
+            slot.overlap = minutesOverlap;
+            slot.overlapPerc = (slot.overlap/slot.duration) * 100;
+
+            return minutesOverlap > 0; // Replace "0" with minimum overlap requirements. 
+            // Is minumum overlap based on fixed number, percentage or both?
         })
-
-    debug('Relevant Slots', relevantSlots);
 
     return relevantSlots
 }
 
 
 module.exports = {
-    Model,
+    Shift,
     createShift,
     insertMany,
     upsert,

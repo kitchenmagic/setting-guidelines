@@ -19,10 +19,10 @@ async function syncShiftsWithDeputyRoster(){
         }
 
         const result = shiftsArray.map( doc => { 
-            return shift.upsert( { deputyRosterId: doc.deputyRosterId }, doc, options ); 
+            return shift.upsert( { deputyRosterId: doc.deputyRosterId }, doc, options, function(err, res){
+                debug('Error: ',err, 'Result',res);
+            } ); 
         });
-
-        debug('Result', result[0]);
 
     } catch(error) {
         throw new Error(error.message);
@@ -77,41 +77,6 @@ async function getRosterData(query){
 
 
 
-
-// Updates a shift based on it's deputy 
-function upsertByDeputyRosterId(shifts){
-
-    if(Array.isArray(shifts))
-        return shifts.map(shift => upsertShift(shift) );
-
-    return upsertShift(shifts);
-
-    function upsertShift(shift){
-
-        if(!shift.deputyRosterId)
-            return;
-
-        try{
-            let upsertData = shift.toObject();
-            delete upsertData._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
-            
-            let query = { 'deputyRosterId': shift.deputyRosterId };
-            const options = { upsert: true, new:true }; //, overwrite:true
-            return Model.findOneAndUpdate( query, {$set: upsertData, runValidators:true } , options, (err,doc)=>{
-                if(err)
-                    throw new Error(err.message);
-                return doc;
-            });
-
-        }catch(err){
-            throw new Error(err.message);
-        }
-    }
-
-}
-
-
-
 function rosterDocToShift(rosterDoc){
 
     return new shift.Model({
@@ -138,5 +103,7 @@ function parseRegionNumber(regionName){
 
 
 
-syncShiftsWithDeputyRoster();
+module.exports = {
+    syncShiftsWithDeputyRoster
+}
 

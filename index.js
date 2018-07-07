@@ -1,11 +1,13 @@
 const config = require('config');
-const log = require('debug')('log');
+const log = require('debug')('index');
 // const express = require('express');
 // const app = express();
 
 //Components
 require('./components/shifts/shifts');
-require('./syncDB/syncDeputyRoster');
+const syncRoster = require('./syncDB/syncDeputyRoster');
+const slots = require('./components/slots/slots');
+
 
 
 
