@@ -71,12 +71,12 @@
                 {
                     "StartDate": { 
                         "field": "Date", 
-                        "data": "2018-06-20",
+                        "data": "2018-07-04",
                         "type": "ge"
                     },
                     "EndDate": { 
                         "field": "Date", 
-                        "data": "2018-06-24", 
+                        "data": "2018-07-04", 
                         "type": "le"
                     }
                 }

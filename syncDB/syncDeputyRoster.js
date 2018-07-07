@@ -22,7 +22,7 @@ async function syncShiftsWithDeputyRoster(){
             return shift.upsert( { deputyRosterId: doc.deputyRosterId }, doc, options ); 
         });
 
-        // debug('Result', result);
+        debug('Result', result[0]);
 
     } catch(error) {
         throw new Error(error.message);

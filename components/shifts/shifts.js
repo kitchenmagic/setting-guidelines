@@ -8,11 +8,11 @@ const debug = require('debug')('shifts');
 const slots = config.get('appointment.slots');
 const apptDuration = config.get('appointment.duration');
 
+// mongoose.set('debug',true);
 mongoose.connect(config.get('mongoDB.path'))
     .then(()=>{debug('Connected to MongoDB...');})
     .catch((err)=>{debug(err);});
 
-    // mongoose.set('debug',true);
 
 //Get reference to database 
 const db = mongoose.connection;
@@ -82,17 +82,16 @@ async function createShift(start, end, regionName, regionNumber, employeeId){
 
 
 
-//Takes single shift or array of shifts
+//Takes single document or array of documents
 function upsert(query, documents, options){
 
     options = options || { upsert:true, runValidators:true, new: true }
 
-    if(Array.isArray(documents)){
-
+    if(Array.isArray(documents))
         return documents.map( document => update( query, document, options ) )
-    }
-
+    
     return update( query, documents, options );
+
 }
 
 
@@ -100,7 +99,7 @@ function upsert(query, documents, options){
 
 function update(query, document, options, callback){
 
-    options = options || {};
+    options = options || {new:true, runValidators:true, upsert:false };
 
     try {
 
@@ -109,14 +108,17 @@ function update(query, document, options, callback){
             delete document._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
         }
         
-        if(!options.overwrite)
-            document = { $set: document }
+        // if(!options.overwrite)
+        //     document = { $set: document }
 
-        if(callback){
-            return Model.update(query, document, options, callback);
-        }
-        
-        return Model.update(query, document, options);
+        debug('Update: ', document);
+
+        let result = Model.findOneAndUpdate(query, document, options, function(err, res){
+            debug('Error: ',err, 'Result',res);
+        });
+
+        return result;
+
 
     } catch(err) {
 
@@ -124,6 +126,8 @@ function update(query, document, options, callback){
 
     }
 }
+
+
 
 //Inserts many documents (shifts) into the database in one call.
 //Atomic function
