@@ -2,24 +2,25 @@ const moment = require('moment');
 const debug = require('debug')('utilities')
 
 
-
+// Determines if the two date ranges overlap using DeMorgans' Law and returns the overlap
 function getRangeOverlap(startA, endA, startB, endB){
-    //Determine if they overlap using DeMorgans' Law
-
+    
     try{
 
+        //Check if they overlap
         if( !(endA <= startB || startA >= endB) ) {
-            //They overlap
+
             let w, x, y, z;
             
             w = endA - startA;
             x = endA - startB;
             y = endB - startB;
             z = endB - startA; 
-            
+
             return Math.min(w,x,y,x);
         }
-        
+
+        // Else return 0
         return 0;
 
     }catch(err){
@@ -41,10 +42,13 @@ function getDuration(xDateTime, yDateTime){
 
 }
 
-
+function handleError(error){
+    return (function(){ throw new Error(error.message); }());
+}
 
 
 module.exports = {
     getRangeOverlap,
-    getDuration
+    getDuration,
+    handleError
 }

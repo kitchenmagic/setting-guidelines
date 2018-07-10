@@ -1,17 +1,14 @@
+'Use Strict';
 const config = require('config');
 const mongoose = require('mongoose');
-const moment = require('moment');
-const utilities = require('../utilities.js') 
-const debug = require('debug')('shifts');
-
-//Config
-const slots = config.get('appointment.slots');
-const apptDuration = config.get('appointment.duration');
+const slots = require('../slots/slots');
+const log = require('debug')('shifts');
+const utilities = require('../utilities')
 
 // mongoose.set('debug',true);
 mongoose.connect(config.get('mongoDB.path'))
-    .then(()=>{debug('Connected to MongoDB...');})
-    .catch((err)=>{debug(err);});
+    .then(()=>{log('Connected to MongoDB...');})
+    .catch((err)=>{log(err);});
 
 
 //Get reference to database 
@@ -19,7 +16,8 @@ const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 
 
-const shiftSchema = new mongoose.Schema({
+// Define schema for shifts
+const schema = new mongoose.Schema({
     deputyRosterId: String,
     start: {
         type: Date,
@@ -29,75 +27,63 @@ const shiftSchema = new mongoose.Schema({
         type: Date,
         required: true
     }, 
-    duration: Object,
+    duration: Number,
     regionName: String,
     regionNumber: Number,
     employeeId: Number,
-    appointmentSlots: [ Object ]
+    appointmentSlots: [ slots.schema ]
 });
 
-//Create the shift model
-const Model = mongoose.model('Shift', shiftSchema);
-
-shiftSchema.pre('update', (doc)=>{
-    debug('validate');
-    doc();
-})
-
-// shiftSchema.on('init', function(){
-    // debug('Schema Init');
-    
-    // if(this.regionName)
-    //     this.regionNumber = utilities.parseRegionNumber(this.regionName);
-    // addSlotsToShifts(this, slots);
-// })
-
-//Set regionNumber
-// shiftSchema.pre('findOneAndUpdate', function(next){
-//     debug('Pre Update');
-//     this.duration = duration( this.start, this.end ).asMinutes(),
-//     debug(this);
-//     next();
-// })
+// Create the shift model
+const Model = mongoose.model('Shift', schema);
 
 
-
-//Creates a shift
-
+// Creates a shift
 async function createShift(start, end, regionName, regionNumber, employeeId){
 
-    const shift = new Shift({
-        start,
-        end,
-        regionName,
-        regionNumber,
-        employeeId
-    });
+    try{
 
-    //Add shifts to slot
-    shift.appointmentSlots = getRelevantSlots(shift.start, shift.end);
+        const shift = new Model({
+            start,
+            end,
+            regionName,
+            regionNumber,
+            employeeId
+        });
+        
+        //Add shifts to slot
+        shift.appointmentSlots = getRelevantSlots(shift.start, shift.end);
+        
+        return await shift.save();
 
-    return await shift.save();
+    } catch(err){
+        utilities.handleError(error);
+    }
 }
+
+
+
+
 
 
 
 //Takes single document or array of documents
-function upsert(query, documents, options){
+async function upsert(query, documents, options, callback){
+
 
     options = options || { upsert:true, runValidators:true, new: true }
 
-    if(Array.isArray(documents))
-        return documents.map( document => update( query, document, options ) )
+    // if(Array.isArray(documents))
+    //     return documents.map( document => update( query, document, options, callback ) )
     
-    return update( query, documents, options );
+    return await update( query, documents, options, callback )
 
 }
 
 
 
-
-function update(query, document, options, callback){
+// Updates shifts in database
+async function update(query, document, options, callback){
 
     options = options || {new:true, runValidators:true, upsert:false };
 
@@ -107,18 +93,15 @@ function update(query, document, options, callback){
             document = document.toObject();
             delete document._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
         }
-        
-        // if(!options.overwrite)
-        //     document = { $set: document }
 
-        debug('Update: ', document);
+        document.appointmentSlots = await slots.getRelevantSlots(document.start, document.end);
 
-        let result = Model.findOneAndUpdate(query, document, options, function(err, res){
-            debug('Error: ',err, 'Result',res);
-        });
+        console.log('It shouldnt get here before Foo')
 
-        return result;
+        if(!options.overwrite)
+             document = { $set: document }
 
+        return Model.findOneAndUpdate(query, document, options, callback);
 
     } catch(err) {
 
@@ -126,6 +109,13 @@ function update(query, document, options, callback){
 
     }
 }
+
+
+
+
+
+
+
 
 
 
@@ -142,41 +132,12 @@ function remove(id){
 
 
 
-//returns array of slots which apply to given dateTime range
-function getRelevantSlots(startDateTime, endDateTime){
-
-    const inputStart = moment(startDateTime);
-    const inputEnd = moment(endDateTime);
-    
-    //Filters out any slots that don't apply to day of week
-    const relevantSlots = slots.filter( slot => slot.dayOfWeek.indexOf( inputStart.day() ) > -1 ) //Filters out slots that don't apply to start day of week
-        .filter( (slot)=>{
-
-            const slotStart = moment( inputStart.date() ).add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
-            const slotEnd = moment( inputEnd.date() ).add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
-
-            const overlap = utilities.getRangeOverlap(inputStart,inputEnd,slotStart,slotEnd);
-
-            debug('Overlap: ', overlap);
-
-            return overlap > 0;
-        })
-
-    debug('Relevant Slots', relevantSlots);
-
-    return relevantSlots
-}
-
-
 module.exports = {
     Model,
+    schema,
     createShift,
     insertMany,
     upsert,
     update,
     remove
 };
-
-
-
-
