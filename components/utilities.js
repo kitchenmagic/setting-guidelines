@@ -19,7 +19,7 @@ function getRangeOverlap(startA, endA, startB, endB){
 
             return Math.min(w,x,y,x);
         }
-        
+
         // Else return 0
         return 0;
 
@@ -42,10 +42,13 @@ function getDuration(xDateTime, yDateTime){
 
 }
 
-
+function handleError(error){
+    return (function(){ throw new Error(error.message); }());
+}
 
 
 module.exports = {
     getRangeOverlap,
-    getDuration
+    getDuration,
+    handleError
 }

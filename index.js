@@ -1,12 +1,16 @@
-const config = require('config');
-const log = require('debug')('index');
-// const express = require('express');
-// const app = express();
+// const shifts = require('./components/shifts/shifts');
+const deputyRosterModule = require('./syncDeputy/syncDeputyRoster');
+const slotsModule = require('./components/slots/slots');
+let slots;
 
-//Components
-require('./components/shifts/shifts');
-const syncRoster = require('./syncDB/syncDeputyRoster');
-const slots = require('./components/slots/slots');
+(async function init(){
+    slots = await slotsModule.getSlots();
+    deputyRoster.sync();
+
+}());
+
+
+
 
 
 
