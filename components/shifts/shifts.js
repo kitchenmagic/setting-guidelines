@@ -31,7 +31,7 @@ const schema = new mongoose.Schema({
     regionName: String,
     regionNumber: Number,
     employeeId: Number,
-    appointmentSlots: [ slots.schema ]
+    slots: [ mongoose.Schema.Types.ObjectId ]
 });
 
 // Create the shift model
@@ -93,10 +93,6 @@ async function update(query, document, options, callback){
             document = document.toObject();
             delete document._id; // Delete the Shift's auto-generated id created by mongoose to aviod issues
         }
-
-        document.appointmentSlots = await slots.getRelevantSlots(document.start, document.end);
-
-        console.log('It shouldnt get here before Foo')
 
         if(!options.overwrite)
              document = { $set: document }
