@@ -68,15 +68,13 @@ async function createShift(start, end, regionName, regionNumber, employeeId){
 
 
 //Takes single document or array of documents
-async function upsert(query, documents, options, callback){
+async function upsert(query, document, options, callback){
 
-
-    options = options || { upsert:true, runValidators:true, new: true }
-
-    // if(Array.isArray(documents))
-    //     return documents.map( document => update( query, document, options, callback ) )
+    options = options || { runValidators:true, new: true }
     
-    return await update( query, documents, options, callback )
+    options.upsert = true;
+
+    return await update( query, document, options, callback )
 
 }
 
@@ -85,7 +83,7 @@ async function upsert(query, documents, options, callback){
 // Updates shifts in database
 async function update(query, document, options, callback){
 
-    options = options || {new:true, runValidators:true, upsert:false };
+    options = options || {new:true, runValidators:true };
 
     try {
 
