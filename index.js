@@ -1,12 +1,8 @@
 // const shifts = require('./components/shifts/shifts');
 const syncDeputyRoster = require('./syncDeputy/syncDeputyRoster');
-const slotsModule = require('./components/slots/slots');
-let slots;
 
 (async function init(){
-    slots = await slotsModule.getSlots();
     syncDeputyRoster();
-
 }());
 
 

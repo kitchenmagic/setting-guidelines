@@ -21,12 +21,12 @@
                 {
                     "StartDate": { 
                         "field": "Date", 
-                        "data": "2018-07-04",
+                        "data": "2017-01-17",
                         "type": "ge"
                     },
                     "EndDate": { 
                         "field": "Date", 
-                        "data": "2018-07-04", 
+                        "data": "2017-01-17", 
                         "type": "le"
                     }
                 }

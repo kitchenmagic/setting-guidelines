@@ -20,21 +20,19 @@ async function sync(){
         //Get the current appointment slots 
         const slots = await slotsModule.getSlots();
 
-        //Upsert options
-        const upsertOptions = {
-            upsert:true,
-            new:true,
-            runValidators:true
-        }
-
         return rosterData
 
             //Create new shift objects from the roster data 
             .map( rosterDoc => {
                 let shift = rosterDocToShift(rosterDoc);
-                shift.slots = utilities.getRelevantSlots(shift.start, shift.end, slots);
+                shift.slots = utilities.getRelevantSlots(shift.start, shift.end, slots).map(slot => {
+                    return {
+                        _id:slot._id,
+                        percentMatch: slot.percentMatch
+                    } 
+                });
 
-                return shiftsModule.upsert( { deputyRosterId: shift.deputyRosterId }, shift, upsertOptions, function(err, res){
+                return shiftsModule.upsert( { deputyRosterId: shift.deputyRosterId }, shift, null, function(err, res){
                     if(err){ throw new Error( err.message ); }
                     return res;
                 }); 
@@ -105,15 +103,15 @@ async function getRosterData(query){
 
 
 function rosterDocToShift(rosterDoc){
-// new shiftsModule.Model(
-    return {
+// 
+    return new shiftsModule.Model({
         deputyRosterId: rosterDoc.Id,
         start: moment(rosterDoc.StartTimeLocalized),
         end: moment(rosterDoc.EndTimeLocalized),
         regionName: rosterDoc._DPMetaData.OperationalUnitInfo.OperationalUnitName,
         employeeId: rosterDoc._DPMetaData.OperationalUnitInfo.Id,
         regionNumber: parseRegionNumber(rosterDoc._DPMetaData.OperationalUnitInfo.OperationalUnitName)
-    };
+    });
 
 }
 

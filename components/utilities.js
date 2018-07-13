@@ -2,32 +2,7 @@ const moment = require('moment');
 const debug = require('debug')('utilities')
 
 
-// Determines if the two date ranges overlap using DeMorgans' Law and returns the overlap
-function getRangeOverlap(startA, endA, startB, endB){
-    
-    try{
 
-        //Check if they overlap
-        if( !(endA <= startB || startA >= endB) ) {
-
-            let w, x, y, z;
-            
-            w = endA - startA;
-            x = endA - startB;
-            y = endB - startB;
-            z = endB - startA; 
-
-            return Math.min(w,x,y,x);
-        }
-
-        // Else return 0
-        return 0;
-
-    }catch(err){
-        throw new Error(err.message);
-    }
-
-}
 
 
 function getDuration(xDateTime, yDateTime){
@@ -61,15 +36,15 @@ function getRelevantSlots(startDateTime, endDateTime, slots){
     if(!slots)
         throw new Error("Invalid Argument: Missing Slots")
 
-    // console.log("All Slots", slots);
 
     //Try to get the relevant slots for the provided dateTime range
     try {
 
 
-        let appSlots = slots
+        return slots
             
-            .map( slot => { let a = slot.toObject(); return a; } )
+            //Convert the mongoose model to a standard object
+            .map( slot => slot = slot.toObject() )
             
             // Filters out slots that don't apply to start day of week 
             .filter( (slot) => slot.daysOfWeek.indexOf( startDateTime.day() ) > -1 ) 
@@ -79,20 +54,18 @@ function getRelevantSlots(startDateTime, endDateTime, slots){
 
                 // Slots have no context, they only apply to days of the week and times
                 // Use the date of the input for the date of the slot
-                const slotStart = startDateTime.startOf('day').add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
-                const slotEnd = endDateTime.startOf('day').add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
+                const slotStart = moment(startDateTime).startOf('day').add(slot.start.hour,'hours').add(slot.start.minute, 'minutes');
+                const slotEnd = moment(endDateTime).startOf('day').add(slot.end.hour,'hours').add(slot.end.minute, 'minutes');
 
                 // Convert overlap from milliseconds to minutes 
                 const minutesOverlap = getRangeOverlap(startDateTime, endDateTime, slotStart, slotEnd) / 60000; 
 
                 slot.overlap = minutesOverlap;
-                slot.overlapPerc = (slot.overlap/slot.duration) * 100;
+                slot.percentMatch = (slot.overlap/slot.duration) * 100;
 
-                return minutesOverlap > 0; // Replace "0" with minimum overlap requirements. 
+                return slot.percentMatch > 0; // Replace "0" with minimum overlap requirements. 
                 // Is minumum overlap based on fixed number, percentage or both?
-            }).map((slot)=> { const id = slot._id; return id;} );
-
-            return appSlots;
+            });
 
     } catch( err ) {
         throw new Error( err ); 
@@ -102,7 +75,32 @@ function getRelevantSlots(startDateTime, endDateTime, slots){
 
 
 
+// Determines if the two date ranges overlap using DeMorgans' Law and returns the overlap
+function getRangeOverlap(startA, endA, startB, endB){
+    
+    try{
 
+        //Check if they overlap
+        if( !(endA <= startB || startA >= endB) ) {
+
+            let w, x, y, z;
+            
+            w = endA - startA;
+            x = endA - startB;
+            y = endB - startB;
+            z = endB - startA; 
+
+            return Math.min(w,x,y,x);
+        }
+
+        // Else return 0
+        return 0;
+
+    }catch(err){
+        throw new Error(err.message);
+    }
+
+}
 
 
 

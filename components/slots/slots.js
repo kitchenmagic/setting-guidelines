@@ -69,15 +69,12 @@ async function createSlot(slot){
 }
 
 async function getSlots(query ,callback){
-    console.log('Get Slots');
-
     try{
         const results = await Model.find(query, callback);
         return results;
     }catch(err){
         throw new Error( err.message );
     }
-
 }
 
 
