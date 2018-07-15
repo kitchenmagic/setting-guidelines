@@ -1,3 +1,4 @@
+'use strict';
 /* 
  * SYNC SHIFTS
  * -------------------------------------------------
@@ -68,7 +69,6 @@ async function getRosterData(query){
  * Helpers
  */ 
 function rosterDocToShift(rosterDoc){
-// 
     return new Shift({
         deputyRosterId: rosterDoc.Id,
         start: moment(rosterDoc.StartTimeLocalized),
@@ -77,7 +77,6 @@ function rosterDocToShift(rosterDoc){
         employeeId: rosterDoc._DPMetaData.OperationalUnitInfo.Id,
         regionNumber: parseRegionNumber(rosterDoc._DPMetaData.OperationalUnitInfo.OperationalUnitName)
     });
-
 }
 
 
@@ -114,6 +113,7 @@ module.exports = async function(){
     deputyShifts = rosterData
         //Create new shift objects from the deputy roster data 
         .map( ( rosterDoc ) => rosterDocToShift(rosterDoc) )
+        deputyShifts = deputyShifts  
         //Get Relevant Slots for shifts
         .map( (deputyShift) => {
             deputyShift.slots = util.getRelevantSlots(deputyShift.start, deputyShift.end, slots)

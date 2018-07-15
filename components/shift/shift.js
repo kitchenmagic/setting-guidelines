@@ -1,6 +1,6 @@
 'Use Strict';
-const config = require('config');
 const mongoose = require('mongoose');
+const config = require('config');
 const moment = require('moment');
 
 
@@ -41,10 +41,6 @@ schema.methods.setDuration = function(){
 
 }
 
-schema.pre('save', function(next){
-
-    next();
-});
 
 // Create the shift model
 const Shift = mongoose.model('Shift', schema);

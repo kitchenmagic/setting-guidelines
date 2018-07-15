@@ -1,14 +1,18 @@
-const axios = require('axios');
-const Slot = require('../components/appointment/slot/slot');
+'use strict';
+/* 
+ * SYNC APPOINTMENTS
+ * -------------------------------------------------
+ * Gets appointment data from KM Sales App (FoxPro)  and 
+ * syncs it with Setting Guidelines appointments
+ */
 const config = require('config');
+const axios = require('axios');
+const log = require('debug')('log');
 
-
-const debug = require('debug');
-let log = debug('log');
-log.log = console.log.bind(console);
+const Slot = require('../components/appointment/slot/slot');
+const Appointment = require('../components/appointment/appointment');
 
 async function getKMAppointments(){
-    "use strict";
     
     try{
         
@@ -45,14 +49,41 @@ async function getKMAppointments(){
     }
 }
 
+function createAppointment(document){
+    return new Appointment({
+        kmid: document.kmid, // Number
+        name: { // Object
+            first: document.name.first, // String
+            last: document.name.last // String
+        },
+        phone: document.phone, // String
+        email: document.email, // String
+        address: {
+            street: document.address.street, // String
+            city: document.address.city, // String
+            state: document.address.state, // String
+            zipCode: document.address.zipCode //Number
+        },
+        date: document.date, // Date
+        setBy: document.setBy, // String
+        setDate: document.detDate, // Date
+        confirmedBy: document.confirmedBy, // String
+        confirmedDate: document.confirmedDate, //Date
+        assignedTo: document.assignedTo, // String
+        region: document.region, // Number
+        notes: document.notes // String
+    });
+}
 
 module.exports = async function(){
 
     try{
         // Get all appointment slots
         const slots = await Slot.find();
-        const appointments = await getKMAppointments();
+        let appointments = await getKMAppointments();
+        appointments = appointments.map( appointment => createAppointment(appointment) );
 
+        log(appointments);
 
     }catch(err){
         throw new Error(err);

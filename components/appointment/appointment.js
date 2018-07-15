@@ -1,8 +1,7 @@
+'use strict'
 const mongoose = require('mongoose');
-const config = require('config');
-const log = require('debug')('appts');
 
-
+// Define appointment schema 
 const schema = new mongoose.Schema({
     kmid: Number,
     name: {
@@ -21,9 +20,9 @@ const schema = new mongoose.Schema({
             max: 99999   
         }
     },
-    appointmentDate: {
+    date: {
         type:Date, 
-        required: true
+        required: [true, 'We need a date to create this appointment']
     },
     setBy: String,
     setDate: Date,
@@ -31,13 +30,14 @@ const schema = new mongoose.Schema({
     confirmedDate: Date,
     region: {
         type: Number,
-        min:0
+        min: 0,
+        max: 100
     },
     notes: String,
     assignedTo: String
 });
 
-const appointment = mongoose.model('appointments', schema);
+// Creates the Appointment model
+const Appointment = mongoose.model('Appointment', schema);
 
-
-module.exports = appointment;
+module.exports = Appointment;

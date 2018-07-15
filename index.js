@@ -1,11 +1,10 @@
+'use strict'
 const config = require('config');
 const mongoose = require('mongoose');
 // const syncShifts = require('./sync/syncShifts');
 const syncAppointments = require('./sync/syncAppointments');
 
-const debug = require('debug');
-let log = debug('index:log');
-log.log = console.log.bind(console); 
+const log = require('debug')('app');
 
 let db;
 
@@ -16,7 +15,6 @@ mongoose.connect(config.get('mongoDB.path'))
         db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
         run( ()=>db.close() );
-
     })
     .catch((err)=>{
         log(err);
@@ -24,7 +22,6 @@ mongoose.connect(config.get('mongoDB.path'))
 
 
 async function run(cb){
-    'use strict'
     try{
         // const syncdShifts = await syncShifts();
         const syncdAppointments = await syncAppointments();
