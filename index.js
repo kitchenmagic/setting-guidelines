@@ -1,7 +1,7 @@
 const config = require('config');
 const mongoose = require('mongoose');
-const syncShifts = require('./sync/syncShifts');
-// const syncAppointments = require('./sync/syncAppointments');
+// const syncShifts = require('./sync/syncShifts');
+const syncAppointments = require('./sync/syncAppointments');
 
 const debug = require('debug');
 let log = debug('index:log');
@@ -26,8 +26,8 @@ mongoose.connect(config.get('mongoDB.path'))
 async function run(cb){
     'use strict'
     try{
-        const syncdShifts = await syncShifts();
-        // const syncdAppointments = await syncAppointments();
+        // const syncdShifts = await syncShifts();
+        const syncdAppointments = await syncAppointments();
         cb();
     }catch(err){
         throw new Error(err);
