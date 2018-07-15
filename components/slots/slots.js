@@ -3,18 +3,9 @@ const config = require('config');
 const log = require('debug')('slots');
 const moment = require('moment');
 
-let db;
-
-mongoose.connect(config.get('mongoDB.path'))
-    .then( () => {
-        log('Connected to MongoDB...');
-        db = mongoose.connection;
-    })
-    .catch( err => { throw new Error( err.message ) } );
-
 
 // Define the Slot schema
-const schema = new mongoose.Schema({
+const slotSchema = new mongoose.Schema({
     start: {
         hour: {
             type: Number,
@@ -55,32 +46,17 @@ const schema = new mongoose.Schema({
 })
 
 // Create the Slot model
-const Model = mongoose.model('Slot', schema);
+const Slot = mongoose.model('Slot', slotSchema);
+
+slotSchema.methods.upsert = function(error, slot, cb){
+    Slot.find();
+};
+
+slotSchema.pre('save', (next)=>{
+    next();
+})
 
 
-// Creates a slot in the database
-async function createSlot(slot){
-    try{
-        slot = new Model(slot);
-        return await slot.save();
-    }catch(err){
-        throw new Error( err.message );
-    }
-}
-
-async function getSlots(query ,callback){
-    try{
-        const results = await Model.find(query, callback);
-        return results;
-    }catch(err){
-        throw new Error( err.message );
-    }
-}
 
 
-module.exports = {
-    Model,
-    schema,
-    createSlot,
-    getSlots
-}
+module.exports = Slot;

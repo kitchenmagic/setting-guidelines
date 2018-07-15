@@ -2,18 +2,7 @@
 const config = require('config');
 const mongoose = require('mongoose');
 const moment = require('moment');
-const log = require('debug')('shifts');
 const utilities = require('../utilities')
-
-// mongoose.set('debug',true);
-mongoose.connect(config.get('mongoDB.path'))
-    .then(()=>{log('Connected to MongoDB...');})
-    .catch((err)=>{log(err);});
-
-
-//Get reference to database 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
 
 
 // Define schema for shifts
@@ -41,9 +30,8 @@ const schema = new mongoose.Schema({
 
 
 
-schema.methods.getRelevantSlots = function( callback ){
-    
-}
+
+schema.methods.getRelevantSlots = function( callback ){};
 
 schema.methods.setDuration = function(){
 
@@ -58,15 +46,21 @@ schema.methods.setDuration = function(){
 
 }
 
-function constructor(shiftModel){
-    
-}
+schema.pre('save', function(next){
 
-schema.pre('findOneAndUpdate', function(next){});
+    Shift.findOne({deputyRosterId:this.deputyRosterId})
+        .then((result)=>{
+            if(result) this._id = result._id;
+            next();
+        })
+        .catch( (err) => { throw new Error(err.message) } )
+    
+});
+
 
 
 // Create the shift model
-const Model = mongoose.model('Shift', schema);
+const Shift = mongoose.model('Shift', schema);
 
 
 
@@ -87,7 +81,7 @@ async function createShift(start, end, regionName, regionNumber, employeeId){
 
     try{
 
-        const shift = new Model({
+        const shift = new Shift({
             start,
             end,
             regionName,
@@ -135,7 +129,7 @@ async function update(query, document, options, callback){
         if(!options.overwrite)
              document = { $set: document }
 
-        return Model.findOneAndUpdate(query, document, options, callback);
+        return Shift.findOneAndUpdate(query, document, options, callback);
 
     } catch(err) {
 
@@ -148,23 +142,9 @@ async function update(query, document, options, callback){
 //Inserts many documents (shifts) into the database in one call.
 //Atomic function
 function insertMany(shiftsArray, callback){
-    return Model.insertMany(shiftsArray, callback );
-}
-
-
-function remove(id){
-    // const result = await Model.deleteOne({_id:id});
+    return Shift.insertMany(shiftsArray, callback );
 }
 
 
 
-
-module.exports = {
-    Model,
-    schema,
-    createShift,
-    insertMany,
-    upsert,
-    update,
-    remove
-};
+module.exports = Shift;

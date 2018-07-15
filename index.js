@@ -1,12 +1,25 @@
+const mongoose = require('mongoose');
+const config = require('config');
+const log = require('debug')('index');
+const syncShifts = require('./sync/syncShifts')
+let db;
+
 // const shifts = require('./components/shifts/shifts');
-const syncDeputyRoster = require('./syncDeputy/syncDeputyRoster');
+const slot = require('./components/slots/slots');
 
-(async function init(){
-    syncDeputyRoster();
-}());
+mongoose.connect(config.get('mongoDB.path'))
+    .then(()=>{
+        log('Sucessfully connected to MongoDB...');
+        db = mongoose.connection;
+        db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-
-
+        syncShifts()
+            .then( ( result ) => { log('syncShift result: ', result); })
+            .catch( (err)=> { console.error.bind(console, 'Error syncing shifts:'); log(err); } );
+    })
+    .catch((err)=>{
+        log(err);
+    });
 
 
 
