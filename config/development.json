@@ -12,6 +12,11 @@
     "mongoDB": {
         "path": "mongodb://localhost/settingGuidelines"
     },
+    "api":{
+        "appointments": {
+            "url": "https://next.json-generator.com/api/json/get/VJiQL8z7S"
+        }
+    },
     "deputy":{
         "authToken": "adf25d0a04b2017cabb30a55e721cae2",
         "roster":{

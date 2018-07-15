@@ -2,9 +2,6 @@ const moment = require('moment');
 const debug = require('debug')('utilities')
 
 
-
-
-
 function getDuration(xDateTime, yDateTime){
 
     xDateTime = moment(xDateTime);

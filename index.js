@@ -1,12 +1,13 @@
-const mongoose = require('mongoose');
 const config = require('config');
-const log = require('debug')('index');
+const mongoose = require('mongoose');
 const syncShifts = require('./sync/syncShifts');
-const util = require('./components/utilities');
-let db;
+// const syncAppointments = require('./sync/syncAppointments');
 
-// const shifts = require('./components/shifts/shifts');
-const slot = require('./components/slots/slots');
+const debug = require('debug');
+let log = debug('index:log');
+log.log = console.log.bind(console); 
+
+let db;
 
 mongoose.connect(config.get('mongoDB.path'))
     .then(()=>{
@@ -14,21 +15,23 @@ mongoose.connect(config.get('mongoDB.path'))
         db = mongoose.connection;
         db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-        run();
+        run( ()=>db.close() );
+
     })
     .catch((err)=>{
         log(err);
     });
 
 
-async function run(){
+async function run(cb){
+    'use strict'
     try{
         const syncdShifts = await syncShifts();
-        console.log(syncdShifts);
+        // const syncdAppointments = await syncAppointments();
+        cb();
     }catch(err){
         throw new Error(err);
     }
-
 }  
 
 
