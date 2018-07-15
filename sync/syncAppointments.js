@@ -83,6 +83,7 @@ module.exports = async function(){
         let appointments = await getKMAppointments();
         appointments = appointments.map( appointment => createAppointment(appointment) );
 
+        // Map slots to appointments
         log(appointments);
 
     }catch(err){

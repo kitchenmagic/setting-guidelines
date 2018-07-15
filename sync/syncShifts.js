@@ -94,7 +94,7 @@ function parseRegionNumber(regionName){
  */
 module.exports = async function(){
 
-    let rosterQuery, rosterData, slots, deputyShifts ;
+    let rosterQuery, rosterData, deputyShifts;
 
     try{
 
@@ -102,9 +102,6 @@ module.exports = async function(){
 
         //Get the roster data from deputy
         rosterData = await getRosterData(rosterQuery);
-        
-        //Get the current appointment slots 
-        slots = await Slot.find();
 
     } catch(err) {
         throw new Error( err.message );
@@ -113,18 +110,6 @@ module.exports = async function(){
     deputyShifts = rosterData
         //Create new shift objects from the deputy roster data 
         .map( ( rosterDoc ) => rosterDocToShift(rosterDoc) )
-        deputyShifts = deputyShifts  
-        //Get Relevant Slots for shifts
-        .map( (deputyShift) => {
-            deputyShift.slots = util.getRelevantSlots(deputyShift.start, deputyShift.end, slots)
-            .map( (slot) => {
-                return {
-                    _id:slot._id,
-                    percentMatch: slot.percentMatch
-                } 
-            });
-            return deputyShift;
-        })
         // Save the shift to the database
         .map( async (deputyShift) => {
 
@@ -139,6 +124,8 @@ module.exports = async function(){
                         delete deputyShift._id;
                         delete deputyShift.isNew;
                         Object.assign( shift, deputyShift );
+                    }else{ 
+                        shift = deputyShift;
                     }
 
                     shift.save( function(err, savedShift){
