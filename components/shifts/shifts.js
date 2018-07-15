@@ -48,13 +48,13 @@ schema.methods.setDuration = function(){
 
 schema.pre('save', function(next){
 
-    Shift.findOne({deputyRosterId:this.deputyRosterId})
-        .then((result)=>{
-            if(result) this._id = result._id;
-            next();
-        })
-        .catch( (err) => { throw new Error(err.message) } )
-    
+    // Shift.findOne({deputyRosterId:this.deputyRosterId})
+    //     .then((result)=>{
+    //         if(result) this._id = result._id;
+    //         next();
+    //     })
+    //     .catch( (err) => { throw new Error(err.message) } )
+    next();
 });
 
 

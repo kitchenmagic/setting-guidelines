@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const config = require('config');
 const log = require('debug')('index');
-const syncShifts = require('./sync/syncShifts')
+const syncShifts = require('./sync/syncShifts');
+const util = require('./components/utilities');
 let db;
 
 // const shifts = require('./components/shifts/shifts');
@@ -13,15 +14,22 @@ mongoose.connect(config.get('mongoDB.path'))
         db = mongoose.connection;
         db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-        syncShifts()
-            .then( ( result ) => { log('syncShift result: ', result); })
-            .catch( (err)=> { console.error.bind(console, 'Error syncing shifts:'); log(err); } );
+        run();
     })
     .catch((err)=>{
         log(err);
     });
 
 
+async function run(){
+    try{
+        const syncdShifts = await syncShifts();
+        console.log(syncdShifts);
+    }catch(err){
+        throw new Error(err);
+    }
+
+}  
 
 
 

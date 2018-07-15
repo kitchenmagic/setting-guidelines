@@ -18,7 +18,7 @@ function getDuration(xDateTime, yDateTime){
 }
 
 function handleError(error){
-    return (function(){ throw new Error(error.message); }());
+    return new Error(error.message);
 }
 
 
