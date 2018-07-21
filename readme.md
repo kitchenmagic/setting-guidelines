@@ -25,3 +25,29 @@ The purpose of this app is to compute Kitchen Magic's appointment availability a
 
 ### ToDo
 Set up task runner
+
+
+Appointment slots will be persisted.
+
+There will be a scheduled task (probably nightly) to generate Appointment Slots for the set number of `daysOut`. `daysOut` is the number of days from today that availability will be calculated for. If `daysOut` is set to 30, then a appointment slots will be generated for the next 30 days. Deputy will be queried for the next 30 days worth of shifts and the appointments from sales app will remain the same because that number is set by Chad. 
+
+If a recurring appointment slot is modified, all future appointment slots, even those that were not modified will need to be regenerated. This is because appointments and shifts may now have better appointment slot matches.
+
+Because of the high query frequency, calculating recurring events (Appointment Slots) is less efficient than persisting them. Persisting appointment slots will also make reporting easier if it is decided to add reporting functionality in the future.
+
+
+When a user updates a recurring event they will be asked if they want to update just that instance or all future occurences of that event. If they choose to update all future occurences of that event, then it's parent and it's rrule will be updated. If not, only that event will be updated.
+
+
+
+
+
+
+
+Event Form Fields
+- Starts DateTime: Date
+- Ends DateTime: Date
+- Frequency: String [Every Day, Every Week, Every Month, Every Year]
+- Duration: [Forever, For n {frequency}, Until Date ]
+
+

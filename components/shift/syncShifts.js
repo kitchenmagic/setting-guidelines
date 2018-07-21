@@ -111,31 +111,29 @@ module.exports = async function(){
         //Create new shift objects from the deputy roster data 
         .map( ( rosterDoc ) => rosterDocToShift(rosterDoc) )
         // Save the shift to the database
-        .map( async (deputyShift) => {
+        .map( async (shift) => {
 
             try{
-                await Shift.findOne( { deputyRosterId: deputyShift.deputyRosterId }, function(err, shift){
+                await Shift.findOne( { deputyRosterId: shift.deputyRosterId }, function(err, existingShift){
                     
                     if(err) return new Error(err);
                     
                     //Check if shift already exists
-                    if( shift ) {
-                        deputyShift = deputyShift.toObject();
-                        delete deputyShift._id;
-                        delete deputyShift.isNew;
-                        Object.assign( shift, deputyShift );
-                    }else{ 
-                        shift = deputyShift;
+                    if( existingShift ) {
+                        shift = shift.toObject();
+                        delete shift._id;
+                        delete shift.isNew;
+                        shift = Object.assign( existingShift, shift );
                     }
 
                     shift.save( function(err, savedShift){
                         if(err) return new Error(err);
-                        deputyShift = savedShift;
+                        shift = savedShift;
                     });
 
                 })
 
-                return deputyShift;
+                return shift;
 
             }catch(err){
                 throw new Error(err); 

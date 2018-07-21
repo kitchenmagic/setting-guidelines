@@ -7,9 +7,7 @@ const util = require('../utilities');
 
 let slots;
 (async function(){
-
     slots = await Slot.find();
-
 }())
 
 // Define schema for shifts
@@ -56,9 +54,8 @@ schema.methods.setDuration = function(){
 
 schema.pre('save', function(next){
 
-    /* Set the duration and adjust end time if slot duration is less than
-     * minimum shift duration
-     */
+    // Set the duration and adjust end time if slot duration is less than
+    // minimum shift duration
     this.setDuration();
     // Get Relevant Slots for shifts
     this.slots = util.getRelevantSlots(this.start, this.end, slots).map( (slot) => {

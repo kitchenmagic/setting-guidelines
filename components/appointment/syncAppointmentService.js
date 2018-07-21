@@ -9,10 +9,9 @@ const config = require('config');
 const axios = require('axios');
 const log = require('debug')('log');
 
-const Slot = require('../components/appointment/slot/slot');
 const Appointment = require('../components/appointment/appointment');
 
-async function getKMAppointments(){
+async function getAppointmentData(){
     
     try{
         
@@ -27,22 +26,20 @@ async function getKMAppointments(){
         };
         
         let response,
-            appointments = [];
+            appointmentData = [];
 
         do{
             //Send the api call
             response = await axios(options);
 
             //Add the returned roster documents to the allRosterData array
-            appointments = appointments.concat(response.data);
+            appointmentData = appointmentData.concat(response.data);
             
         }
         //Get more records if the previous fetch hit the max number documents. Eg. the query limit  
-        while( appointments.length < 200 );  
-        
-        log('Appointments Returned: ', appointments.length);
+        while( appointmentData.length < 100 );  
 
-        return appointments;
+        return appointmentData;
 
     } catch(err) {
         throw new Error(err);
@@ -64,7 +61,7 @@ function createAppointment(document){
             state: document.address.state, // String
             zipCode: document.address.zipCode //Number
         },
-        date: document.date, // Date
+        start: document.date, // Date
         setBy: document.setBy, // String
         setDate: document.detDate, // Date
         confirmedBy: document.confirmedBy, // String
@@ -76,18 +73,47 @@ function createAppointment(document){
 }
 
 module.exports = async function(){
-
+    let appointments;
+    
     try{
-        // Get all appointment slots
-        const slots = await Slot.find();
-        let appointments = await getKMAppointments();
-        appointments = appointments.map( appointment => createAppointment(appointment) );
-
-        // Map slots to appointments
-        log(appointments);
-
+        appointments = await getAppointmentData();
     }catch(err){
         throw new Error(err);
     }
+
+    appointments = appointments.map( async appointmentDoc => {
+
+        try{
+            let appointment = createAppointment(appointmentDoc);
+        
+            await Appointment.findOne( { kmid: appointment.kmid }, function(error, existingAppointment){
+                
+                // Return the error if ther is one
+                if(error) throw new Error(err);
+
+                if(existingAppointment){
+                    appointment = appointment.toObject();
+                    delete appointment._id;
+                    delete appointment.isNew;
+                    appointment = Object.assign(existingAppointment, appointment);
+                }
+
+                appointment.save( function(err, savedAppointment){
+                    if(err) throw new Error(err.message);
+                    appointment = savedAppointment;
+                })
+
+            })
+        
+            return appointment;
+
+        }catch(err){
+            throw new Error(err.message);
+        }
+
+    });
+
+    return Promise.all(appointments);
+
     
 }

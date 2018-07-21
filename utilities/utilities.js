@@ -1,5 +1,6 @@
 const moment = require('moment');
 const debug = require('debug')('utilities')
+const RRule = require('rrule').RRule;
 
 
 function getDuration(xDateTime, yDateTime){
@@ -99,6 +100,22 @@ function getRangeOverlap(startA, endA, startB, endB){
 
 }
 
+const rrule = {
+    
+    getAllDates: function(rrule){
+        let rule = rrule;
+        try{
+            if(typeof rrule === "string") rule = RRule.fromString(rrule);
+            return rule.all();
+        }catch(error){
+            throw new Error(error);
+        }
+    }
+
+}
+
+
+
 
 
 
@@ -108,5 +125,6 @@ module.exports = {
     getRangeOverlap,
     getDuration,
     handleError,
-    getRelevantSlots
+    getRelevantSlots,
+    rrule
 }

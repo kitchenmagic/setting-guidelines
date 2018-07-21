@@ -1,20 +1,20 @@
 'use strict'
 const config = require('config');
 const mongoose = require('mongoose');
-const syncShifts = require('./sync/syncShifts');
-const syncAppointments = require('./sync/syncAppointments');
-
+const AppointmentSlot = require('./components/appointmentSlot/appointmentSlot');
 const log = require('debug')('app');
+const moment = require('moment');
+// const syncShifts = require('./sync/syncShifts');
+// const syncAppointments = require('./sync/syncAppointments');
 
-let db;
+mongoose.set('debug', true);
 
 mongoose.connect(config.get('mongoDB.path'))
     .then(()=>{
-        log('Sucessfully connected to MongoDB...');
-        db = mongoose.connection;
+        let db = mongoose.connection;
+        console.log('Sucessfully connected to MongoDB...', db);
         db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-
-        run( ()=>db.close() );
+        run();
     })
     .catch((err)=>{
         log(err);
@@ -23,9 +23,27 @@ mongoose.connect(config.get('mongoDB.path'))
 
 async function run(cb){
     try{
-        const syncdShifts = await syncShifts();
-        // const syncdAppointments = await syncAppointments();
-        cb();
+
+        // let appointmentSlot = new AppointmentSlot({
+        //     startDateTime: new Date(),
+        //     isRecurring: true,
+        //     rrule: "FREQ=WEEKLY;DTSTART=20180721T223000Z;UNTIL=20180831T200000Z;WKST=MO;BYDAY=MO,TU,WE,TH,FR"
+        // });
+
+        /*
+         * 10AM:    FREQ=WEEKLY;DTSTART=20180720T140000Z;WKST=MO;BYDAY=MO,TU,WE,TH,FR
+         * 2PM:     FREQ=WEEKLY;DTSTART=20180721T180000Z;WKST=MO;BYDAY=MO,TU,WE,TH,FR
+         * 6:30PM:  FREQ=WEEKLY;DTSTART=20180721T223000Z;WKST=MO;BYDAY=MO,TU,WE,TH,FR
+         * UNTIL=20180831T200000Z;
+         *         
+        */
+        
+        // await appointmentSlot.save( (error) => {
+        //     if(error) throw new Error(error.message);
+        // });
+
+        await AppointmentSlot();
+
     }catch(err){
         throw new Error(err);
     }

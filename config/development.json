@@ -1,6 +1,5 @@
 {
     "appointment": {
-
         "minimumOverlapPerc": 75,
         "duration": 120
     },
@@ -38,5 +37,6 @@
             }
         },
         "employees": {}
-    }
+    },
+    "schedulingWindowSize": 30
 }
