@@ -1,7 +1,6 @@
 'use strict'
 const mongoose = require('mongoose');
-const config = require('config');
-const moment = require('moment');
+const Event = require('../event/eventModel');
 
 
 // Define appointment schema 
@@ -40,26 +39,8 @@ const appointmentSchema = new mongoose.Schema({
 });
 
 class AppointmentClass{
-
-    get duration(){
-        // config.get('appointment.duration');
-        if(!this.endDateTime) return;
-        return (moment(this.endDateTime) - moment(this.startDateTime)) / 60000;
-    }
 }
 
 appointmentSchema.loadClass(AppointmentClass);
 
-appointmentSchema.pre('save', function(next){
-    
-    this.setDuration();
-    next();
-})
-
-appointmentSchema.post('save', function(next){
-    
-    next();
-})
-
-const Appointment = Event.discriminator('Appointment', appointmentSchema, 'appointment');
-module.exports = Appointment;
+exports.Appointment = Event.discriminator('Appointment', appointmentSchema, 'appointment');

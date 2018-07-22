@@ -1,7 +1,11 @@
 'use strict'
 const config = require('config');
 const mongoose = require('mongoose');
-const slot = require('./components/slot/model');
+const slotModel = require('./components/slot/slotModel');
+const Slot = slotModel.Slot;
+const eventModel = require('./components/event/eventModel');
+const Event = eventModel.Event;
+const moment = require('moment');
 
 mongoose.set('debug', true);
 
@@ -20,8 +24,18 @@ mongoose.connect(config.get('mongoDB.path'))
 async function run(cb){
     try{
 
-        const results = await slot.forwardFillRecurringSlots();
+
+        let event = new Slot({
+            startDateTime: new Date(),
+            endDateTime: moment().add(2, 'hours').toDate(),
+            isRecurring: true,
+            rrule: "FREQ=WEEKLY;DTSTART=20180720T140000Z;COUNT=30;WKST=MO;BYDAY=MO,TU,WE,TH,FR"
+        })
+
+        let results = await event.save();
         console.log(results);
+
+
         // let appointmentSlot = new AppointmentSlot({
         //     startDateTime: new Date(),
         //     isRecurring: true,
@@ -62,38 +76,3 @@ async function run(cb){
 
 
 
-
-
-
-/*
-    Tasks
-        1) Get roster data from deputy
-            - Nightly refresh of all data
-            - Webhooks for roster CRUDs
-        2) Update database with cleaned capacity data
-        3) Get appointment data 
-
-
-    1) Get Shifts
-        Push shifts 
-
-    2) Get Booked Appointments
-    3) Compute Appointment Availability
-    4) Write Appointment Availability to Database
-
-
-
-
-    API REQUESTS
-        GETs
-            appointment availability
-            booked appointments
-            salesperson availability
-
-        POSTs
-            booked appointments
-
-
-
-
-*/
