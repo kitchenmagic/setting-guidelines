@@ -94,7 +94,7 @@ async function updatePendingAppointmentSlots(){
 }
 
 
-createRecurring() {
+function createRecurring() {
     if(!this.rrule) return;
 
     try{
@@ -109,6 +109,6 @@ createRecurring() {
     return appointmentSlots;
 };
 
-createPendingRecurring(){
+function createPendingRecurring(){
     let a = updatePendingAppointmentSlots();
 }
