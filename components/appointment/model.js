@@ -1,17 +1,11 @@
 'use strict'
 const mongoose = require('mongoose');
-const Slot = require('./slot/slot');
 const config = require('config');
 const moment = require('moment');
-const util = require('../utilities');
 
-let slots;
-(async function(){
-    slots = await Slot.find();
-}())
 
 // Define appointment schema 
-const schema = new mongoose.Schema({
+const appointmentSchema = new mongoose.Schema({
     kmid: String,
     name: {
         first: String,
@@ -29,11 +23,6 @@ const schema = new mongoose.Schema({
             max: 99999   
         }
     },
-    start: {
-        type:Date, 
-        required: [true, 'We need a date to create this appointment']
-    },
-    end: Date,
     duration: Number,
     setBy: String,
     setDate: Date,
@@ -50,29 +39,27 @@ const schema = new mongoose.Schema({
     timestamps: true
 });
 
-schema.methods.setDuration = function(){
+class AppointmentClass{
 
-    // If the actual duration is less than the minumum shift duration, 
-    // assign the minimum shift duration
-    this.duration = config.get('appointment.duration');
-
-    // Re-calculates the shift's end time
-    this.end = moment(this.start).add(this.duration, 'minutes');
-
+    get duration(){
+        // config.get('appointment.duration');
+        if(!this.endDateTime) return;
+        return (moment(this.endDateTime) - moment(this.startDateTime)) / 60000;
+    }
 }
 
-schema.pre('save', function(next){
+appointmentSchema.loadClass(AppointmentClass);
+
+appointmentSchema.pre('save', function(next){
     
     this.setDuration();
     next();
 })
 
-schema.post('save', function(next){
-
+appointmentSchema.post('save', function(next){
+    
     next();
 })
 
-// Creates the Appointment model
-const Appointment = mongoose.model('Appointment', schema);
-
+const Appointment = Event.discriminator('Appointment', appointmentSchema, 'appointment');
 module.exports = Appointment;

@@ -13,6 +13,8 @@ const eventSchema = new mongoose.Schema({
         default: false
     },
     rrule: String,
+    originalStartDateTime: Date,
+    orignialEndDateTime: Date,
     parentId: mongoose.Schema.Types.ObjectId
 },{
     timestamps:true

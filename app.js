@@ -1,11 +1,7 @@
 'use strict'
 const config = require('config');
 const mongoose = require('mongoose');
-const AppointmentSlot = require('./components/appointmentSlot/appointmentSlot');
-const log = require('debug')('app');
-const moment = require('moment');
-// const syncShifts = require('./sync/syncShifts');
-// const syncAppointments = require('./sync/syncAppointments');
+const slot = require('./components/slot/model');
 
 mongoose.set('debug', true);
 
@@ -17,13 +13,15 @@ mongoose.connect(config.get('mongoDB.path'))
         run();
     })
     .catch((err)=>{
-        log(err);
+        console.log(err);
     });
 
 
 async function run(cb){
     try{
 
+        const results = await slot.forwardFillRecurringSlots();
+        console.log(results);
         // let appointmentSlot = new AppointmentSlot({
         //     startDateTime: new Date(),
         //     isRecurring: true,
@@ -42,7 +40,7 @@ async function run(cb){
         //     if(error) throw new Error(error.message);
         // });
 
-        await AppointmentSlot();
+        // await AppointmentSlot();
 
     }catch(err){
         throw new Error(err);

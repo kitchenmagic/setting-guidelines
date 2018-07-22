@@ -72,7 +72,7 @@ function createAppointment(document){
     });
 }
 
-module.exports = async function(){
+exports.sync = async function(){
     let appointments;
     
     try{
@@ -117,3 +117,5 @@ module.exports = async function(){
 
     
 }
+
+exports.getSomethign = function(){}
